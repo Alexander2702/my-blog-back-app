@@ -5,10 +5,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 import ru.project.myBloc.model.Post;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Repository
 public class JdbcPostRepositoryBean implements PostRepository {
@@ -68,7 +65,22 @@ public class JdbcPostRepositoryBean implements PostRepository {
 
     @Override
     public Optional<Post> findById(long id) {
-        return Optional.empty();
+        // Загружаем основные поля поста и считаем количество привязанных комментариев
+        String sql = """
+                SELECT p.id, p.title, p.text, p.likes_count,
+                       (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) AS comments_count
+                FROM posts p
+                WHERE p.id = ?
+                """;
+
+        List<Post> posts = jdbcTemplate.query(sql, POST_ROW_MAPPER, id);
+        if (posts.isEmpty()) {
+            return Optional.empty();
+        }
+
+        // Подгружаем теги из связанной таблицы post_tags
+        loadTagsForPosts(posts);
+        return Optional.of(posts.getFirst());
     }
 
     @Override
@@ -128,4 +140,5 @@ public class JdbcPostRepositoryBean implements PostRepository {
             post.setTags(tagsByPostId.getOrDefault(post.getId(), new ArrayList<>()));
         }
     }
+
 }

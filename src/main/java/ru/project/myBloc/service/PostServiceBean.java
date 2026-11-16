@@ -1,0 +1,91 @@
+package ru.project.myBloc.service;
+
+import org.springframework.stereotype.Service;
+import ru.project.myBloc.dto.PostResponseDto;
+import ru.project.myBloc.dto.PostsPageResponseDto;
+import ru.project.myBloc.model.Post;
+import ru.project.myBloc.repository.PostRepository;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+public class PostServiceBean implements PostService {
+    // Максимальная длина текста поста в ленте перед обрезкой
+    private static final int PREVIEW_MAX_LENGTH = 128;
+
+    private final PostRepository postRepository;
+
+    public PostServiceBean(PostRepository postRepository) {
+        this.postRepository = postRepository;
+    }
+
+    // Получение списка постов для ленты с поиском и пагинацией
+    public PostsPageResponseDto getPosts(String search, int pageNumber, int pageSize) {
+        // Разбираем строку поиска на теги (слова с '#') и подстроку заголовка
+        List<String> tags = new ArrayList<>();
+        String titleSubstring = parseSearch(search, tags);
+
+        // Считаем общее количество подходящих постов и вычисляем номер последней страницы
+        long totalPosts = postRepository.countPosts(titleSubstring, tags);
+        int lastPage = Math.max(1, (int) Math.ceil((double) totalPosts / pageSize));
+        int offset = (pageNumber - 1) * pageSize;
+
+        // Получаем посты из БД для текущей страницы и конвертируем их в DTO с обрезкой текста
+        List<Post> posts = postRepository.findPosts(titleSubstring, tags, pageSize, offset);
+        List<PostResponseDto> postDtos =
+                posts.stream().map(this::toPreviewDto).collect(Collectors.toList());
+
+        // 4. Собираем итоговый ответ с флагами навигации по страницам
+        return PostsPageResponseDto.builder()
+                .posts(postDtos)
+                .hasPrev(pageNumber > 1)
+                .hasNext(pageNumber < lastPage)
+                .lastPage(lastPage)
+                .build();
+    }
+
+    // Преобразует сущность Post в DTO для ленты: если текст длиннее 128 символов, обрезает и добавляет '…'
+    private PostResponseDto toPreviewDto(Post post) {
+        String text = post.getText();
+        if (text != null && text.length() > PREVIEW_MAX_LENGTH) {
+            text = text.substring(0, PREVIEW_MAX_LENGTH) + "…";
+        }
+
+        return PostResponseDto.builder()
+                .id(post.getId())
+                .title(post.getTitle())
+                .text(text)
+                .tags(post.getTags())
+                .likesCount(post.getLikesCount())
+                .commentsCount(post.getCommentsCount())
+                .build();
+    }
+
+    // Разбивает строку search по пробелам: теги с '#' идут в список tags, остальные слова склеиваются через пробел
+    private String parseSearch(String search, List<String> tags) {
+        if (search == null || search.isBlank()) {
+            return "";
+        }
+
+        String[] words = search.split(" ");
+        List<String> titleWords = new ArrayList<>();
+
+        for (String word : words) {
+            if (word.isEmpty()) {
+                continue;
+            }
+            if (word.startsWith("#")) {
+                String tag = word.substring(1);
+                if (!tag.isEmpty() && !tags.contains(tag)) {
+                    tags.add(tag);
+                }
+            } else {
+                titleWords.add(word);
+            }
+        }
+
+        return String.join(" ", titleWords);
+    }
+}
