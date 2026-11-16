@@ -129,6 +129,39 @@ public class JdbcPostRepositoryBean implements PostRepository {
         jdbcTemplate.update("DELETE FROM posts WHERE id = ?", id);
     }
 
+    @Override
+    public int incrementLikes(long id) {
+        jdbcTemplate.update("UPDATE posts SET likes_count = likes_count + 1 WHERE id = ?", id);
+
+        // Запрашиваем актуальное количество лайков для возврата на фронт
+        Integer likes = jdbcTemplate.queryForObject(
+                "SELECT likes_count FROM posts WHERE id = ?",
+                Integer.class,
+                id
+        );
+        return likes != null ? likes : 0;
+    }
+
+    @Override
+    public void updateImage(long id, byte[] imageBytes) {
+        jdbcTemplate.update("UPDATE posts SET image = ? WHERE id = ?", imageBytes, id);
+    }
+
+    @Override
+    public Optional<byte[]> findImageById(long id) {
+        // Читаем байты картинки из колонки BLOB для указанного поста
+        List<byte[]> images = jdbcTemplate.query(
+                "SELECT image FROM posts WHERE id = ?",
+                (rs, rowNum) -> rs.getBytes("image"),
+                id
+        );
+
+        if (images.isEmpty() || images.getFirst() == null) {
+            return Optional.empty();
+        }
+        return Optional.of(images.getFirst());
+    }
+
     // Формирует SQL-условие WHERE на основе подстроки заголовка и списка обязательных тегов
     private String buildWhereClause(String titleSubstring, List<String> tags, List<Object> params) {
         List<String> conditions = new ArrayList<>();

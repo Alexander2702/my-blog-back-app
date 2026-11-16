@@ -1,6 +1,8 @@
 package ru.project.myBloc.controller;
 
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import ru.project.myBloc.dto.PostRequestDto;
 import ru.project.myBloc.dto.PostResponseDto;
 import ru.project.myBloc.dto.PostsPageResponseDto;
@@ -49,4 +51,26 @@ public class PostController {
     public void deletePost(@PathVariable("id") long id) {
         postService.deletePost(id);
     }
+
+    // Эндпоинт 6 - Увеличение числа лайков поста на +1 (возвращает новое число в теле ответа)
+    @PostMapping("/{id}/likes")
+    public int addLike(@PathVariable("id") long id) {
+        return postService.addLike(id);
+    }
+
+    // Эндпоинт 7 - Загрузка/обновление картинки поста (multipart/form-data, имя поля "image")
+    @PutMapping("/{id}/image")
+    public void updatePostImage(
+            @PathVariable("id") long id,
+            @RequestParam("image") MultipartFile image
+    ) {
+        postService.updatePostImage(id, image);
+    }
+
+    // Эндпоинт 8 - Получение картинки поста в виде массива байт
+    @GetMapping(value = "/{id}/image", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public byte[] getPostImage(@PathVariable("id") long id) {
+        return postService.getPostImage(id);
+    }
+
 }

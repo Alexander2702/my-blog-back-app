@@ -3,6 +3,7 @@ package ru.project.myBloc.service;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import ru.project.myBloc.dto.PostRequestDto;
 import ru.project.myBloc.dto.PostResponseDto;
@@ -10,6 +11,7 @@ import ru.project.myBloc.dto.PostsPageResponseDto;
 import ru.project.myBloc.model.Post;
 import ru.project.myBloc.repository.PostRepository;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -102,11 +104,47 @@ public class PostServiceBean implements PostService {
     @Override
     @Transactional
     public void deletePost(long id) {
-        if (postRepository.findById(id).isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Пост не найден: " + id);
-        }
+        checkPostExists(id);
 
         postRepository.deleteById(id);
+    }
+
+    // Увеличение счётчика лайков поста на +1
+    @Override
+    @Transactional
+    public int addLike(long id) {
+        checkPostExists(id);
+
+        return postRepository.incrementLikes(id);
+    }
+
+    // Загрузка или обновление картинки поста
+    @Override
+    @Transactional
+    public void updatePostImage(long id, MultipartFile image) {
+        checkPostExists(id);
+
+        try {
+            // Извлекаем массив байт из загруженного файла и сохраняем в БД
+            byte[] imageBytes = image.getBytes();
+            postRepository.updateImage(id, imageBytes);
+        } catch (IOException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Не удалось прочитать файл изображения", e);
+        }
+    }
+
+    @Override
+    public byte[] getPostImage(long id) {
+        // Извлекаем байты картинки из БД; если пост или картинка отсутствуют — возвращаем 404 Not Found
+        return postRepository.findImageById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Картинка не найдена для поста: " + id));
+    }
+
+    @Override
+    public void checkPostExists(long postId) {
+        if (postRepository.findById(postId).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Пост не найден: " + postId);
+        }
     }
 
     // очищает список тегов от null, пробелов и дубликатов

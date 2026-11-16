@@ -25,4 +25,12 @@ public interface PostRepository {
     // Удаляет пост по ID (связанные теги и комментарии удалятся каскадно)
     void deleteById(long id);
 
+    // Увеличивает счётчик лайков поста на +1 и возвращает обновлённое значение
+    int incrementLikes(long id);
+
+    // Сохраняет массив байт изображения для указанного поста
+    void updateImage(long id, byte[] imageBytes);
+    // Возвращает массив байт изображения поста по ID
+    Optional<byte[]> findImageById(long id);
+
 }
