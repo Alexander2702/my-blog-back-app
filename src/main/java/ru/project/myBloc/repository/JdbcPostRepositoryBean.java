@@ -2,9 +2,13 @@ package ru.project.myBloc.repository;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.project.myBloc.model.Post;
 
+import java.sql.PreparedStatement;
+import java.sql.Statement;
 import java.util.*;
 
 @Repository
@@ -85,12 +89,44 @@ public class JdbcPostRepositoryBean implements PostRepository {
 
     @Override
     public Post save(Post post) {
-        return null;
+        String sql = "INSERT INTO posts (title, text, likes_count) VALUES (?, ?, 0)";
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+
+        // Выполняем вставку поста и запрашиваем у БД сгенерированный первичный ключ (id)
+        jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, post.getTitle());
+            ps.setString(2, post.getText());
+            return ps;
+        }, keyHolder);
+
+        // Получаем присвоенный базой ID и заполняем начальные счётчики нового поста
+        long generatedId = Objects.requireNonNull(keyHolder.getKey()).longValue();
+        post.setId(generatedId);
+        post.setLikesCount(0);
+        post.setCommentsCount(0);
+
+        // Сохраняем список тегов поста в связанную таблицу post_tags
+        saveTags(generatedId, post.getTags());
+        return post;
     }
 
     @Override
     public void update(Post post) {
+        // Обновляем только title и text
+        jdbcTemplate.update(
+                "UPDATE posts SET title = ?, text = ? WHERE id = ?",
+                post.getTitle(), post.getText(), post.getId()
+        );
 
+        // Удаляем старые теги этого поста и записываем актуальный список через уже готовый saveTags
+        jdbcTemplate.update("DELETE FROM post_tags WHERE post_id = ?", post.getId());
+        saveTags(post.getId(), post.getTags());
+    }
+
+    @Override
+    public void deleteById(long id) {
+        jdbcTemplate.update("DELETE FROM posts WHERE id = ?", id);
     }
 
     // Формирует SQL-условие WHERE на основе подстроки заголовка и списка обязательных тегов
@@ -138,6 +174,22 @@ public class JdbcPostRepositoryBean implements PostRepository {
         // Распределяем загруженные теги по соответствующим объектам Post
         for (Post post : posts) {
             post.setTags(tagsByPostId.getOrDefault(post.getId(), new ArrayList<>()));
+        }
+    }
+
+    // сохраняет уникальные непустые теги поста в таблицу post_tags
+    private void saveTags(long postId, List<String> tags) {
+        if (tags == null || tags.isEmpty()) {
+            return;
+        }
+        List<String> uniqueTags = tags.stream()
+                .filter(tag -> tag != null && !tag.isBlank())
+                .map(String::trim)
+                .distinct()
+                .toList();
+
+        for (String tag : uniqueTags) {
+            jdbcTemplate.update("INSERT INTO post_tags (post_id, tag) VALUES (?, ?)", postId, tag);
         }
     }
 

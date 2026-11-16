@@ -21,4 +21,8 @@ public interface PostRepository {
 
     // Обновляет существующий пост и его теги
     void update(Post post);
+
+    // Удаляет пост по ID (связанные теги и комментарии удалятся каскадно)
+    void deleteById(long id);
+
 }

@@ -1,6 +1,10 @@
 package ru.project.myBloc.service;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+import ru.project.myBloc.dto.PostRequestDto;
 import ru.project.myBloc.dto.PostResponseDto;
 import ru.project.myBloc.dto.PostsPageResponseDto;
 import ru.project.myBloc.model.Post;
@@ -46,6 +50,94 @@ public class PostServiceBean implements PostService {
                 .build();
     }
 
+    // Получение полной информации о посте по ID
+    @Override
+    public PostResponseDto getPostById(long id) {
+        // Ищем пост в БД; если не найден — возвращаем статус 404 Not Found
+        Post post = postRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Пост не найден: " + id));
+
+        // Возвращаем полное DTO (поле text не обрезается до 128 символов)
+        return toFullDto(post);
+    }
+
+    // Создание нового поста
+    @Override
+    @Transactional
+    public PostResponseDto createPost(PostRequestDto request) {
+        // Очищаем список тегов через отдельный вспомогательный метод
+        List<String> cleanTags = sanitizeTags(request.getTags());
+
+        // Собираем новую сущность Post и сохраняем в БД
+        Post post = Post.builder()
+                .title(request.getTitle())
+                .text(request.getText())
+                .tags(cleanTags)
+                .build();
+
+        Post savedPost = postRepository.save(post);
+        // Возвращаем полный JSON созданного поста
+        return toFullDto(savedPost);
+    }
+
+    @Override
+    @Transactional
+    public PostResponseDto updatePost(long id, PostRequestDto request) {
+        // Проверяем, что пост существует в БД, и получаем его актуальные likesCount и commentsCount
+        Post existingPost = postRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Пост не найден: " + id));
+
+        // Обновляем поля поста и очищаем новый список тегов
+        Post updatedPost = existingPost.toBuilder()
+                .title(request.getTitle())
+                .text(request.getText())
+                .tags(sanitizeTags(request.getTags()))
+                .build();
+
+        // Сохраняем изменения в БД и возвращаем полное DTO
+        postRepository.update(existingPost);
+        return toFullDto(existingPost);
+    }
+
+    @Override
+    @Transactional
+    public void deletePost(long id) {
+        if (postRepository.findById(id).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Пост не найден: " + id);
+        }
+
+        postRepository.deleteById(id);
+    }
+
+    // очищает список тегов от null, пробелов и дубликатов
+    private List<String> sanitizeTags(List<String> tags) {
+        List<String> cleanTags = new ArrayList<>();
+        if (tags == null) {
+            return cleanTags;
+        }
+        for (String tag : tags) {
+            if (tag != null && !tag.isBlank()) {
+                String trimmed = tag.trim();
+                if (!cleanTags.contains(trimmed)) {
+                    cleanTags.add(trimmed);
+                }
+            }
+        }
+        return cleanTags;
+    }
+
+    // Преобразует сущность Post в полное DTO для страницы поста
+    private PostResponseDto toFullDto(Post post) {
+        return PostResponseDto.builder()
+                .id(post.getId())
+                .title(post.getTitle())
+                .text(post.getText())
+                .tags(post.getTags())
+                .likesCount(post.getLikesCount())
+                .commentsCount(post.getCommentsCount())
+                .build();
+    }
+
     // Преобразует сущность Post в DTO для ленты: если текст длиннее 128 символов, обрезает и добавляет '…'
     private PostResponseDto toPreviewDto(Post post) {
         String text = post.getText();
@@ -56,7 +148,7 @@ public class PostServiceBean implements PostService {
         return PostResponseDto.builder()
                 .id(post.getId())
                 .title(post.getTitle())
-                .text(text)
+                .text(text) // текст не полный
                 .tags(post.getTags())
                 .likesCount(post.getLikesCount())
                 .commentsCount(post.getCommentsCount())
