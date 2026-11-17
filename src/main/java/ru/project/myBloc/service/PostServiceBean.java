@@ -97,8 +97,8 @@ public class PostServiceBean implements PostService {
                 .build();
 
         // Сохраняем изменения в БД и возвращаем полное DTO
-        postRepository.update(existingPost);
-        return toFullDto(existingPost);
+        postRepository.update(updatedPost);
+        return toFullDto(updatedPost);
     }
 
     @Override

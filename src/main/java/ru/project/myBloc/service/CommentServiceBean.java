@@ -1,6 +1,7 @@
 package ru.project.myBloc.service;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import ru.project.myBloc.dto.CommentDto;
@@ -8,7 +9,7 @@ import ru.project.myBloc.model.Comment;
 import ru.project.myBloc.repository.CommentRepository;
 
 import java.util.List;
-
+@Service
 public class CommentServiceBean implements CommentService {
 
     private final CommentRepository commentRepository;

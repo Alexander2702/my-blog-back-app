@@ -27,6 +27,8 @@ dependencies {
     implementation "org.springframework.data:spring-data-jdbc:${jdbcVersion}"
     implementation "com.h2database:h2:${h2Version}"
 
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.1'
+
     // Servlet API
     compileOnly "jakarta.servlet:jakarta.servlet-api:${servletApiVersion}"
     testImplementation "jakarta.servlet:jakarta.servlet-api:${servletApiVersion}"
@@ -51,5 +53,5 @@ test {
 }
 
 war {
-    archiveFileName = 'myROOT.war' // удобное имя
+    archiveFileName = 'ROOT.war' // удобное имя
 }

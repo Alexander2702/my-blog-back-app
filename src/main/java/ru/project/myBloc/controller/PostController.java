@@ -29,7 +29,7 @@ public class PostController {
     }
 
     // Эндпоинт 2 - Получение одного поста по id
-    @PostMapping("/{id}") // логичнее get
+    @GetMapping("/{id}") // логичнее get
     public PostResponseDto getPostById(@PathVariable("id") long id) {
         return postService.getPostById(id);
     }
