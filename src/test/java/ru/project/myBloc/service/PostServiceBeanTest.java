@@ -177,4 +177,25 @@ public class PostServiceBeanTest {
         );
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
     }
+
+    @Test
+    void deletePost_deletesWhenPostExists() {
+        when(postRepository.findById(1L)).thenReturn(Optional.of(new Post()));
+
+        postService.deletePost(1L);
+
+        // Проверяем, что репозиторий получил команду удалить пост с ID = 1
+        verify(postRepository).deleteById(1L);
+    }
+
+    @Test
+    void addLike_incrementsAndReturnsNewCount() {
+        when(postRepository.findById(1L)).thenReturn(Optional.of(new Post()));
+        when(postRepository.incrementLikes(1L)).thenReturn(6);
+
+        int updatedLikes = postService.addLike(1L);
+
+        assertEquals(6, updatedLikes);
+        verify(postRepository).incrementLikes(1L);
+    }
 }
