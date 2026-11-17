@@ -19,6 +19,8 @@ ext {
     junitVersion = '5.11.3'
     lombokVersion = '1.18.34'
     mockitoVersion = '5.14.2'
+    hamcrestVersion = '3.0'
+    jsonpathVersion = '2.9.0'
 }
 
 dependencies {
@@ -46,6 +48,9 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation "org.mockito:mockito-core:${mockitoVersion}"
     testImplementation "org.mockito:mockito-junit-jupiter:${mockitoVersion}"
+    testImplementation "org.hamcrest:hamcrest:${hamcrestVersion}"
+    testImplementation "com.jayway.jsonpath:json-path:${jsonpathVersion}"
+
 }
 
 test {
