@@ -6,6 +6,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import ru.project.myBloc.dto.PostRequestDto;
 import ru.project.myBloc.dto.PostResponseDto;
@@ -197,5 +198,29 @@ public class PostServiceBeanTest {
 
         assertEquals(6, updatedLikes);
         verify(postRepository).incrementLikes(1L);
+    }
+
+    @Test
+    void updatePostImage_savesBytesWhenPostExists() {
+        byte[] imageBytes = new byte[]{1, 2, 3, 4};
+        MockMultipartFile file = new MockMultipartFile(
+                "image", "test.jpg", "image/jpeg", imageBytes
+        );
+        when(postRepository.findById(1L)).thenReturn(Optional.of(new Post()));
+
+        postService.updatePostImage(1L, file);
+
+        // Проверяем, что в репозиторий передан именно наш массив байт
+        verify(postRepository).updateImage(1L, imageBytes);
+    }
+
+    @Test
+    void getPostImage_throwsNotFoundWhenMissing() {
+        when(postRepository.findImageById(1L)).thenReturn(Optional.empty());
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class, () -> postService.getPostImage(1L)
+        );
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
     }
 }
