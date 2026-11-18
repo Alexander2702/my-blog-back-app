@@ -1,0 +1,62 @@
+plugins {
+    id 'java'
+    id 'war'
+}
+
+group = 'ru.project.myBloc'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    springVersion = '6.2.1'
+    jdbcVersion = '3.4.1'
+    servletApiVersion = '6.0.0'
+    h2Version = '2.3.232'
+    jacksonVersion = '2.18.1'
+    junitVersion = '5.11.3'
+    lombokVersion = '1.18.34'
+    mockitoVersion = '5.14.2'
+    hamcrestVersion = '3.0'
+    jsonpathVersion = '2.9.0'
+}
+
+dependencies {
+    // Spring Web MVC & JDBC & H2
+    implementation "org.springframework:spring-webmvc:${springVersion}"
+    implementation "org.springframework.data:spring-data-jdbc:${jdbcVersion}"
+    implementation "com.h2database:h2:${h2Version}"
+
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.1'
+
+    // Servlet API
+    compileOnly "jakarta.servlet:jakarta.servlet-api:${servletApiVersion}"
+    testImplementation "jakarta.servlet:jakarta.servlet-api:${servletApiVersion}"
+
+    // Lombok
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
+    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+    // Lombok для тестов
+    testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
+    testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+
+    // Тестирование: JUnit 5, Spring Test
+    testImplementation "org.junit.jupiter:junit-jupiter:${junitVersion}"
+    testImplementation "org.springframework:spring-test:${springVersion}"
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation "org.mockito:mockito-core:${mockitoVersion}"
+    testImplementation "org.mockito:mockito-junit-jupiter:${mockitoVersion}"
+    testImplementation "org.hamcrest:hamcrest:${hamcrestVersion}"
+    testImplementation "com.jayway.jsonpath:json-path:${jsonpathVersion}"
+
+}
+
+test {
+    useJUnitPlatform()
+}
+
+war {
+    archiveFileName = 'ROOT.war' // удобное имя
+}
