@@ -1,11 +1,10 @@
 package ru.project.myBloc.service;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.web.server.ResponseStatusException;
 import ru.project.myBloc.dto.CommentDto;
 import ru.project.myBloc.model.Comment;
@@ -18,15 +17,20 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
+@SpringJUnitConfig(classes = TestConfig.class)
 public class CommentServiceBeanTest {
 
-    @Mock
+    @Autowired
     private CommentRepository commentRepository;
-    @Mock
+    @Autowired
     private PostService postService;
-    @InjectMocks
+    @Autowired
     private CommentServiceBean commentService;
+
+    @BeforeEach
+    void resetMocks() {
+        reset(commentRepository, postService);
+    }
 
     @Test
     void getCommentsByPostId_returnsMappedListWhenPostExists() {

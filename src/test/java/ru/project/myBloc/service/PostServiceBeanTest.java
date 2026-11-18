@@ -1,12 +1,11 @@
 package ru.project.myBloc.service;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.web.server.ResponseStatusException;
 import ru.project.myBloc.dto.PostRequestDto;
 import ru.project.myBloc.dto.PostResponseDto;
@@ -19,16 +18,20 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
+@SpringJUnitConfig(classes = TestConfig.class)
 public class PostServiceBeanTest {
-    @Mock
+    @Autowired
     private PostRepository postRepository;
 
-    @InjectMocks
+    @Autowired
     private PostServiceBean postService;
+
+    @BeforeEach
+    void resetMocks() {
+        reset(postRepository);
+    }
 
     @Test
     void getPosts_parsesSearchAndTruncatesLongText() {

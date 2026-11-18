@@ -29,6 +29,11 @@ public class PostServiceBean implements PostService {
 
     // Получение списка постов для ленты с поиском и пагинацией
     public PostsPageResponseDto getPosts(String search, int pageNumber, int pageSize) {
+        if (pageNumber < 1 || pageSize < 1) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Параметры pageNumber и pageSize должны быть больше 0"
+            );
+        }
         // Разбираем строку поиска на теги (слова с '#') и подстроку заголовка
         List<String> tags = new ArrayList<>();
         String titleSubstring = parseSearch(search, tags);
